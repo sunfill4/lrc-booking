@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>حجز مركز مصادر المدرسة</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single right-to-left column — week strip of school days, then the day's periods as catalogue-card rows. */
+:root{
+  --bg:#F3F5F9; --surface:#FFFFFF; --ink:#14203A; --muted:#5A6580; --line:#D8DEEA;
+  --accent:#1B3A6B; --accent-ink:#FFFFFF; --accent-soft:#E3EAF5;
+  --brass:#9C7620; --brass-soft:#F7EFD9; --danger:#A33A2B;
+  --f-display:"Amiri","Traditional Arabic",Georgia,serif;
+  --f-body:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1424; --surface:#161E33; --ink:#E6EBF5; --muted:#98A3BC; --line:#29344F;
+  --accent:#8FB0E6; --accent-ink:#0E1424; --accent-soft:#1C2847;
+  --brass:#DDB55A; --brass-soft:#2C2614; --danger:#E58A7B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1424; --surface:#161E33; --ink:#E6EBF5; --muted:#98A3BC; --line:#29344F;
+  --accent:#8FB0E6; --accent-ink:#0E1424; --accent-soft:#1C2847;
+  --brass:#DDB55A; --brass-soft:#2C2614; --danger:#E58A7B; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;padding-inline:16px;padding-block:24px 48px}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-direction:column;gap:12px}
+.brand{display:flex;align-items:center;gap:16px}
+.brandtext{display:flex;flex-direction:column;gap:2px;min-width:0}
+.logo{width:96px;height:96px;flex:none;border-radius:50%;background:#FFFFFF;object-fit:contain}
+@media (max-width:480px){.logo{width:72px;height:72px}}
+.eyebrow{font-size:13px;color:var(--muted);font-weight:500}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(34px,7vw,46px);line-height:1.2;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:0;max-width:60ch}
+.weekbar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.weekbar .label{font-weight:600;text-align:center}
+.iconbtn{font:inherit;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;white-space:nowrap}
+.iconbtn:hover{border-color:var(--accent)}
+.days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.day{font:inherit;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.day .dn{font-size:12px;color:var(--muted)}
+.day .dd{font-family:var(--f-mono);font-size:22px;line-height:1.1;font-weight:500}
+.day .cnt{font-size:11px;color:var(--muted)}
+.day.sel{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.day.sel .dn,.day.sel .cnt{color:var(--accent-ink);opacity:.85}
+.day.today:not(.sel){border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dayhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:8px}
+.dayhead h2{font-family:var(--f-display);font-weight:700;font-size:28px;margin:0}
+.legend{display:flex;gap:12px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-inline-end:5px;vertical-align:-1px}
+.slots{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.slot{background:var(--surface);border:1px solid var(--line);border-radius:10px;display:grid;grid-template-columns:104px minmax(0,1fr);overflow:hidden}
+.slot .time{padding:12px;border-inline-end:1px dashed var(--line);font-family:var(--f-mono);font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums}
+.slot .time span{direction:ltr;text-align:end}
+.slot .time b{font-family:var(--f-body);font-size:14px;color:var(--ink);font-weight:600}
+.slot .body{padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.slot.booked{background:var(--accent-soft)}
+.slot.mine{background:var(--brass-soft);border-color:var(--brass)}
+.slot.past{opacity:.55}
+.free{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.free span{color:var(--muted)}
+.btn{font:inherit;font-weight:600;border-radius:8px;padding:7px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.danger{background:transparent;border-color:var(--danger);color:var(--danger)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.who{font-weight:600;overflow-wrap:anywhere}
+.meta{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.tag{font-size:12px;font-weight:600;color:var(--brass)}
+form.bk{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+form.bk label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);min-width:0}
+form.bk .full{grid-column:1/-1}
+form.bk fieldset.needs{border:1px solid var(--line);border-radius:8px;padding:6px 10px 10px;margin:0;display:flex;flex-wrap:wrap;gap:6px 16px;min-width:0}
+form.bk fieldset.needs legend{font-size:12px;color:var(--muted);padding-inline:4px}
+form.bk label.chk{flex-direction:row;align-items:center;gap:6px;font-size:14px;color:var(--ink);cursor:pointer}
+form.bk label.chk input{width:auto;accent-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:2px 10px}
+form.bk input,form.bk select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+form.bk .actions{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+.notice{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:12px 14px;color:var(--muted);font-size:14px}
+.notice.err{border-color:var(--danger);color:var(--danger)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:500;max-width:calc(100% - 32px);text-align:center}
+footer{font-size:13px;color:var(--muted)}
+@media (max-width:480px){.slot{grid-template-columns:84px minmax(0,1fr)}form.bk{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){.slot{transition:background .2s}}
+</style>
+</head>
+<body>
+
+<div class="wrap" dir="rtl" lang="ar">
+  <header>
+    <div class="brand">
+      <img class="logo" src="data:image/webp;base64,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" width="96" height="96" alt="شعار مركز مصادر مدرسة صهيب بن سنان للبنين">
+      <div class="brandtext">
+        <span class="eyebrow">مدرسة صهيب بن سنان للبنين · مركز المصادر</span>
+        <h1>حجز مركز مصادر المدرسة</h1>
+      </div>
+    </div>
+    <p class="sub">اختر يوماً دراسياً، ثم اضغط على حصة متاحة لحجز مركز المصادر لصفك. تظهر الحجوزات لجميع المعلمين فوراً، ولا يمكن حجز الحصة نفسها مرتين.</p>
+  </header>
+
+  <div id="status" class="notice" hidden></div>
+
+  <div class="weekbar">
+    <button class="iconbtn" id="prevWeek" type="button" aria-label="الأسبوع السابق">→ السابق</button>
+    <span class="label" id="weekLabel"></span>
+    <button class="iconbtn" id="nextWeek" type="button" aria-label="الأسبوع التالي">التالي ←</button>
+  </div>
+  <div class="days" id="days" role="tablist" aria-label="أيام الدراسة"></div>
+
+  <section>
+    <div class="dayhead">
+      <h2 id="dayTitle"></h2>
+      <div class="legend"><span><i style="background:var(--accent-soft);border:1px solid var(--line)"></i>محجوزة</span><span><i style="background:var(--brass-soft);border:1px solid var(--brass)"></i>حجوزاتك</span></div>
+    </div>
+    <div class="slots" id="slots"></div>
+  </section>
+
+  <footer>الأسبوع الدراسي من الأحد إلى الخميس. يمكنك إلغاء حجزك من الجهاز نفسه الذي حجزت منه. لإلغاء أي حجز آخر تواصل مع مسؤول مركز المصادر.</footer>
+</div>
+<div class="toast" id="toast" dir="rtl" hidden></div>
+
+<script>
+// الجدول الزمني للحصص — عدّله ليطابق جدول المدرسة.
+const PERIODS=[
+  {id:"p1",name:"الحصة الأولى",start:"07:15",end:"07:55"},
+  {id:"p2",name:"الحصة الثانية",start:"08:00",end:"08:40"},
+  {id:"p3",name:"الحصة الثالثة",start:"08:45",end:"09:25"},
+  {id:"p4",name:"الحصة الرابعة",start:"09:30",end:"10:10"},
+  {id:"br",name:"الفسحة",start:"10:10",end:"10:35"},
+  {id:"p5",name:"الحصة الخامسة",start:"10:35",end:"11:15"},
+  {id:"p6",name:"الحصة السادسة",start:"11:20",end:"12:00"},
+  {id:"p7",name:"الحصة السابعة",start:"12:05",end:"12:45"},
+  {id:"p8",name:"الحصة الثامنة",start:"12:50",end:"13:30"}
+];
+const DAYNAMES=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس"];
+const LOC="ar-OM-u-nu-latn";
+
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+function sundayOf(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-x.getDay());return x}
+
+const now=new Date();
+let weekStart=sundayOf(now);
+if(now.getDay()>=5){weekStart.setDate(weekStart.getDate()+7)}
+let selDate=ymd(now.getDay()>=5?weekStart:now);
+let bookings={};
+let ready=false;
+let myTokens={};try{myTokens=JSON.parse(localStorage.getItem("lhb-tokens")||"{}")||{}}catch(e){}
+function saveTokens(){try{localStorage.setItem("lhb-tokens",JSON.stringify(myTokens))}catch(e){}}
+let openForm=null,confirmCancel=null,busy=false;
+
+function lsGet(k){try{return localStorage.getItem(k)||""}catch(e){return""}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+
+function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2600)}
+function status(msg,err){const s=$("status");if(!msg){s.hidden=true;return}s.textContent=msg;s.className="notice"+(err?" err":"");s.hidden=false}
+
+function weekDates(){return DAYNAMES.map((_,i)=>{const d=new Date(weekStart);d.setDate(d.getDate()+i);return ymd(d)})}
+function isPast(date,p){const[h,m]=p.end.split(":").map(Number);const d=parse(date);d.setHours(h,m,0,0);return d<new Date()}
+function countLabel(n){if(!n)return"متاحة";if(n===1)return"حجز واحد";if(n===2)return"حجزان";if(n<=10)return n+" حجوزات";return n+" حجزاً"}
+
+function renderDays(){
+  const dates=weekDates();
+  if(!dates.includes(selDate))selDate=dates[0];
+  const f=parse(dates[0]),l=parse(dates[4]);
+  const fmt=d=>d.toLocaleDateString(LOC,{day:"numeric",month:"long"});
+  $("weekLabel").textContent=`${fmt(f)} – ${fmt(l)} ${l.getFullYear()}`;
+  const box=$("days");box.textContent="";
+  const today=ymd(new Date());
+  dates.forEach((ds,i)=>{
+    const n=PERIODS.filter(p=>bookings[ds+"_"+p.id]).length;
+    const b=document.createElement("button");b.type="button";b.className="day"+(ds===selDate?" sel":"")+(ds===today?" today":"");
+    b.setAttribute("role","tab");b.setAttribute("aria-selected",ds===selDate);
+    b.innerHTML=`<span class="dn"></span><span class="dd">${parse(ds).getDate()}</span><span class="cnt"></span>`;
+    b.querySelector(".dn").textContent=DAYNAMES[i];
+    b.querySelector(".cnt").textContent=countLabel(n);
+    b.onclick=()=>{selDate=ds;openForm=null;confirmCancel=null;render()};
+    box.appendChild(b);
+  });
+}
+
+function renderSlots(){
+  const d=parse(selDate);
+  $("dayTitle").textContent=d.toLocaleDateString(LOC,{weekday:"long",day:"numeric",month:"long"});
+  const box=$("slots");box.textContent="";
+  for(const p of PERIODS){
+    const key=selDate+"_"+p.id, bk=bookings[key], past=isPast(selDate,p);
+    const row=document.createElement("div");
+    const mine=!!(bk&&myTokens[bk.id]);
+    row.className="slot"+(bk?" booked":"")+(mine?" mine":"")+(past?" past":"");
+    row.innerHTML=`<div class="time"><b></b><span></span></div><div class="body"></div>`;
+    row.querySelector(".time b").textContent=p.name;
+    row.querySelector(".time span").textContent=`${p.start}–${p.end}`;
+    const body=row.querySelector(".body");
+    if(bk){
+      if(mine){const t=document.createElement("span");t.className="tag";t.textContent="حجزك";body.appendChild(t)}
+      const w=document.createElement("div");w.className="who";w.textContent=bk.teacher||"معلم";body.appendChild(w);
+      const m=document.createElement("div");m.className="meta";m.textContent=[bk.purpose,bk.subject,bk.cls&&("الصف "+bk.cls),bk.details].filter(Boolean).join(" · ");if(m.textContent)body.appendChild(m);
+      if(Array.isArray(bk.needs)&&bk.needs.length){const nd=document.createElement("div");nd.className="chips";bk.needs.forEach(x=>{const c=document.createElement("span");c.className="chip";c.textContent=x;nd.appendChild(c)});body.appendChild(nd)}
+      if(mine&&!past){
+        if(confirmCancel===key){
+          const c=document.createElement("div");c.className="confirm";c.innerHTML=`<span>هل تريد إلغاء هذا الحجز؟</span>`;
+          const y=document.createElement("button");y.className="btn danger";y.type="button";y.textContent="نعم، ألغِ الحجز";y.onclick=()=>cancel(key);
+          const n=document.createElement("button");n.className="btn ghost";n.type="button";n.textContent="إبقاء";n.onclick=()=>{confirmCancel=null;render()};
+          c.append(y,n);body.appendChild(c);
+        }else{
+          const c=document.createElement("button");c.className="btn danger";c.type="button";c.textContent="إلغاء الحجز";c.style.alignSelf="flex-start";
+          c.onclick=()=>{confirmCancel=key;openForm=null;render()};body.appendChild(c);
+        }
+      }
+    }else if(past){body.innerHTML=`<span class="meta">انتهت</span>`}
+    else if(openForm===key){body.appendChild(buildForm(key,p))}
+    else{
+      const f=document.createElement("div");f.className="free";f.innerHTML=`<span>متاحة</span>`;
+      const b=document.createElement("button");b.className="btn";b.type="button";b.textContent="احجز";b.disabled=!ready;
+      b.onclick=()=>{openForm=key;confirmCancel=null;render();setTimeout(()=>{const i=$("f-teacher");i&&!i.value?i.focus():$("f-class")?.focus()},0)};
+      f.appendChild(b);body.appendChild(f);
+    }
+    box.appendChild(row);
+  }
+}
+
+function buildForm(key,p){
+  const f=document.createElement("form");f.className="bk";
+  f.innerHTML=`<label>اسمك<input id="f-teacher" required maxlength="60" autocomplete="name"></label>
+  <label>الغرض<select id="f-purpose" required><option value="" disabled selected>اختر الغرض</option><option>حصة دراسية</option><option>اجتماع</option><option>ورشة</option><option>نشاط</option></select></label>
+  <label>المادة (اختياري)<select id="f-subject"><option value="">— بدون مادة —</option><option>التربية الإسلامية</option><option>اللغة العربية</option><option>اللغة الإنجليزية</option><option>الرياضيات</option><option>العلوم</option><option>الدراسات الإجتماعية</option><option>الرياضة</option><option>الفنون التشكيلية</option><option>تقنية المعلومات</option><option>المهارات الحياتية</option><option>المهارات الموسيقية</option></select></label>
+  <label>الصف (اختياري)<input id="f-class" maxlength="20" placeholder="مثال: ٨/٢"></label>
+  <fieldset class="needs full"><legend>الاحتياجات (اختياري)</legend>
+    <label class="chk"><input type="checkbox" id="f-need-screen" value="شاشة العرض">شاشة العرض</label>
+    <label class="chk"><input type="checkbox" id="f-need-pcs" value="أجهزة الحاسوب">أجهزة الحاسوب</label>
+    <label class="chk"><input type="checkbox" id="f-need-books" value="الكتب">الكتب</label>
+  </fieldset>
+  <label class="full">ملاحظات أخرى (اختياري)<input id="f-details" maxlength="100" placeholder="مثال: عدد الطلاب ٣٠"></label>
+  <div class="actions"><button type="button" class="btn ghost" id="f-cancel">إغلاق</button><button type="submit" class="btn" id="f-submit"></button></div>`;
+  f.querySelector("#f-submit").textContent="احجز "+p.name;
+  f.querySelector("#f-teacher").value=lsGet("lhb-name");
+  f.querySelector("#f-cancel").onclick=()=>{openForm=null;render()};
+  f.onsubmit=e=>{e.preventDefault();book(key,p,{teacher:f.querySelector("#f-teacher").value.trim(),cls:f.querySelector("#f-class").value.trim(),purpose:f.querySelector("#f-purpose").value,subject:f.querySelector("#f-subject").value,needs:[...f.querySelectorAll(".needs input:checked")].map(x=>x.value),details:f.querySelector("#f-details").value.trim()})};
+  return f;
+}
+
+function render(){renderDays();renderSlots()}
+
+const API="https://script.google.com/macros/s/AKfycbxjP5Mo0tD65S27tl3xL8lVcoVu_VYM5ctSSBU8-SbquXIRfGr3kdEk20uGHPmWv876/exec";
+async function api(body){
+  const r=await fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body),redirect:"follow",credentials:"omit"});
+  if(!r.ok)throw new Error("HTTP "+r.status);
+  return r.json();
+}
+async function run(fn,...a){
+  if(fn==="getBookings"){const r=await api({action:"list",from:a[0],to:a[1]});if(!r.ok)throw new Error(r.error);return r.bookings}
+  if(fn==="bookSlot")return api({action:"book",data:a[0]});
+  if(fn==="cancelBooking")return api({action:"cancel",id:a[0],token:a[1]});
+  throw new Error("unknown")
+}
+
+let loading=0;
+async function load(){
+  const d=weekDates(),seq=++loading;
+  try{
+    const list=await run("getBookings",d[0],d[4]);
+    if(seq!==loading)return;
+    const next={};(list||[]).forEach(b=>{next[b.date+"_"+b.period]=b});
+    bookings=next;ready=true;status("");
+  }catch(e){status("تعذّر تحميل الحجوزات. تحقق من الاتصال ثم أعد تحميل الصفحة.",true)}
+  if(openForm||confirmCancel)renderDays();else render();
+}
+
+async function book(key,p,v){
+  if(busy)return;
+  if(!v.teacher||!v.purpose){toast("أدخل اسمك واختر الغرض لإتمام الحجز.");return}
+  busy=true;const sb=$("f-submit");if(sb){sb.disabled=true;sb.textContent="جارٍ الحجز…"}
+  lsSet("lhb-name",v.teacher);
+  const date=key.slice(0,10);
+  try{
+    const r=await run("bookSlot",Object.assign({date:date,period:p.id},v));
+    if(r&&r.ok){
+      myTokens[r.id]=r.token;saveTokens();openForm=null;
+      toast(`تم حجز ${p.name} يوم ${parse(date).toLocaleDateString(LOC,{weekday:"long"})}.`);
+    }else{
+      toast((r&&r.error)||"تعذّر الحجز. حاول مرة أخرى.");
+      if(r&&r.taken)openForm=null;
+    }
+  }catch(e){toast("تعذّر حفظ الحجز. تحقق من الاتصال وحاول مرة أخرى.")}
+  busy=false;await load();
+}
+
+async function cancel(key){
+  const bk=bookings[key];if(busy||!bk)return;busy=true;
+  try{
+    const r=await run("cancelBooking",bk.id,myTokens[bk.id]);
+    if(r&&r.ok){delete myTokens[bk.id];saveTokens();confirmCancel=null;toast("تم إلغاء الحجز.")}
+    else toast((r&&r.error)||"تعذّر الإلغاء.");
+  }catch(e){toast("تعذّر الإلغاء. حاول مرة أخرى.")}
+  busy=false;confirmCancel=null;await load();
+}
+
+$("prevWeek").onclick=()=>{weekStart.setDate(weekStart.getDate()-7);selDate="";openForm=null;confirmCancel=null;bookings={};render();load()};
+$("nextWeek").onclick=()=>{weekStart.setDate(weekStart.getDate()+7);selDate="";openForm=null;confirmCancel=null;bookings={};render();load()};
+
+render();
+status("جارٍ تحميل الحجوزات…");
+load();
+setInterval(()=>{if(!document.hidden&&!busy)load()},30000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!busy)load()});
+</script>
+</body>
+</html>
