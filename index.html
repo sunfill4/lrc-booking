@@ -83,10 +83,6 @@ form.bk .actions{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end}
 .confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
 .notice{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:12px 14px;color:var(--muted);font-size:14px}
 .notice.err{border-color:var(--danger);color:var(--danger)}
-.notice.loading{display:flex;align-items:center;gap:10px;border-color:var(--accent);background:var(--accent-soft);color:var(--ink);font-weight:500;position:sticky;top:8px;z-index:5}
-.spin{width:18px;height:18px;flex:none;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:500;max-width:calc(100% - 32px);text-align:center}
 footer{font-size:13px;color:var(--muted)}
 @media (max-width:480px){.slot{grid-template-columns:84px minmax(0,1fr)}form.bk{grid-template-columns:1fr}}
@@ -164,8 +160,7 @@ function lsGet(k){try{return localStorage.getItem(k)||""}catch(e){return""}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 
 function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2600)}
-function status(msg,err,loading){const s=$("status");if(!msg){s.hidden=true;return}s.textContent="";if(loading){const i=document.createElement("span");i.className="spin";i.setAttribute("aria-hidden","true");s.appendChild(i)}const t=document.createElement("span");t.textContent=msg;s.appendChild(t);s.className="notice"+(err?" err":"")+(loading?" loading":"");s.setAttribute("role",err?"alert":"status");s.hidden=false}
-const LOADING_MSG="جارٍ تحميل الحجوزات… قد يستغرق ذلك بضع ثوانٍ، انتظر حتى تظهر أزرار «احجز».";
+function status(msg,err){const s=$("status");if(!msg){s.hidden=true;return}s.textContent=msg;s.className="notice"+(err?" err":"");s.hidden=false}
 
 function weekDates(){return DAYNAMES.map((_,i)=>{const d=new Date(weekStart);d.setDate(d.getDate()+i);return ymd(d)})}
 function isPast(date,p){const[h,m]=p.end.split(":").map(Number);const d=parse(date);d.setHours(h,m,0,0);return d<new Date()}
@@ -185,7 +180,7 @@ function renderDays(){
     b.setAttribute("role","tab");b.setAttribute("aria-selected",ds===selDate);
     b.innerHTML=`<span class="dn"></span><span class="dd">${parse(ds).getDate()}</span><span class="cnt"></span>`;
     b.querySelector(".dn").textContent=DAYNAMES[i];
-    b.querySelector(".cnt").textContent=ready?countLabel(n):"…";
+    b.querySelector(".cnt").textContent=countLabel(n);
     b.onclick=()=>{selDate=ds;openForm=null;confirmCancel=null;render()};
     box.appendChild(b);
   });
@@ -223,8 +218,8 @@ function renderSlots(){
     }else if(past){body.innerHTML=`<span class="meta">انتهت</span>`}
     else if(openForm===key){body.appendChild(buildForm(key,p))}
     else{
-      const f=document.createElement("div");f.className="free";f.innerHTML=ready?`<span>متاحة</span>`:`<span>جارٍ التحقق…</span>`;
-      const b=document.createElement("button");b.className="btn";b.type="button";b.textContent=ready?"احجز":"جارٍ التحميل…";b.disabled=!ready;
+      const f=document.createElement("div");f.className="free";f.innerHTML=`<span>متاحة</span>`;
+      const b=document.createElement("button");b.className="btn";b.type="button";b.textContent="احجز";b.disabled=!ready;
       b.onclick=()=>{openForm=key;confirmCancel=null;render();setTimeout(()=>{const i=$("f-teacher");i&&!i.value?i.focus():$("f-class")?.focus()},0)};
       f.appendChild(b);body.appendChild(f);
     }
@@ -308,12 +303,11 @@ async function cancel(key){
   busy=false;confirmCancel=null;await load();
 }
 
-function changeWeek(n){weekStart.setDate(weekStart.getDate()+n);selDate="";openForm=null;confirmCancel=null;bookings={};ready=false;status(LOADING_MSG,false,true);render();load()}
-$("prevWeek").onclick=()=>changeWeek(-7);
-$("nextWeek").onclick=()=>changeWeek(7);
+$("prevWeek").onclick=()=>{weekStart.setDate(weekStart.getDate()-7);selDate="";openForm=null;confirmCancel=null;bookings={};render();load()};
+$("nextWeek").onclick=()=>{weekStart.setDate(weekStart.getDate()+7);selDate="";openForm=null;confirmCancel=null;bookings={};render();load()};
 
 render();
-status(LOADING_MSG,false,true);
+status("جارٍ تحميل الحجوزات…");
 load();
 setInterval(()=>{if(!document.hidden&&!busy)load()},30000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!busy)load()});
